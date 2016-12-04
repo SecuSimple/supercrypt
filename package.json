@@ -1,0 +1,17 @@
+{
+  "name": "SecureMyFilesMini",
+  "version": "1.0.0",
+  "repository": {
+  "type": "git",
+  "url": "git://github.com/SecuSimple/SecureMyFilesMini.git"
+},
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-concat": "~0.5.0",
+    "grunt-indent": "~0.1.4",
+    "grunt-insert": "~0.1.0",
+    "grunt-contrib-clean": "~0.6.0",
+    "grunt-contrib-uglify": "~0.5.0"
+  }
+}
