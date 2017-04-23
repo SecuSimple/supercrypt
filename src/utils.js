@@ -109,3 +109,6 @@ Utils.RandomGenerator = function () {
 
   checkEvents();
 };
+
+//exports
+module.exports = Utils;

@@ -1,4 +1,8 @@
-/**
+var sEncryptor = require('../sEncrypt/sEncrypt');
+var StorageManager = require('./storagemgr');
+var Utils = require('./utils');
+
+/** 
  * Main Secure My Files (SMF) class - creates a new SMF object
  * @constructor
  * @param {Function} success - The success callback
@@ -19,14 +23,15 @@ var SecureMyFiles = function (success, error, progress, saveOnDisk) {
         }
     };
 
-    var handleFinish = function (removedBytes) {
-        sMan.saveToDisk(removedBytes);
+    var handleFinish = function () {
+        sMan.saveToDisk();
     };
 
     this.encryptFile = function (file, key) {
         var seedList = [];//TODO use random generator
         sMan = new StorageManager(file);
-        encryptor = new sEncrypt.Encryptor({
+        encryptor = new sEncryptor({
+            fileSize: sMan.getLength(),
             saveBlock: sMan.store,
             readBlock: sMan.readChunk,
             progressHandler: handleProgress,
@@ -39,14 +44,18 @@ var SecureMyFiles = function (success, error, progress, saveOnDisk) {
 
     this.decryptFile = function (file, key) {
         sMan = new StorageManager(file);
-        encryptor = new sEncrypt.Encryptor({
+        encryptor = new sEncryptor({
+            fileSize: sMan.getLength(),
             saveBlock: sMan.store,
             readBlock: sMan.readChunk,
             progressHandler: handleProgress,
             finishHandler: handleFinish,
-            errorHandler: error
+            errorHandler: error,
         });
 
         encryptor.decrypt(key);
     };
 };
+
+//exports
+module.exports = SecureMyFiles;

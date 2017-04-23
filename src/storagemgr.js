@@ -1,3 +1,5 @@
+var Utils = require('./utils');
+
 /**
  * Manages file operations
  * @param {File} file - The disk file to be handled
@@ -11,50 +13,9 @@ var StorageManager = function (file) {
         length = fileSize - 32;
 
     /**
-     * IE - Saves a blob to disk
-     */
-    var msSaveAs = typeof navigator !== "undefined" &&
-        navigator.msSaveOrOpenBlob && navigator.msSaveOrOpenBlob.bind(navigator);
-
-    /**
-     * Webkit - Saves a blob to disk
-     */
-    var wkSaveAs = typeof webkitRequestFileSystem !== 'undefined' &&
-        function (blob, fileName) {
-            webkitRequestFileSystem(TEMPORARY, length, function (fs) {
-                fs.root.getDirectory("SecureMyFiles", {
-                    create: true
-                }, function (dir) {
-                    var save = function () {
-                        dir.getFile(fileName, {
-                            create: true,
-                            exclusive: false
-                        }, function (file) {
-                            file.createWriter(function (writer) {
-                                writer.onwriteend = function (event) {
-                                    window.location.href = file.toURL();
-                                };
-                                writer.write(blob);
-                            });
-                        });
-                    };
-
-                    dir.getFile(fileName, {
-                        create: false
-                    }, function (file) {
-                        file.remove(save);
-                    }, function () {
-                        save();
-                    });
-
-                });
-            });
-        };
-
-    /**
      * Saves a blob to disk
      */
-    var defaultSaveAs = function (blob, fileName) {
+    var saveBlob = function (blob, fileName) {
         var objUrl = URL.createObjectURL(blob);
 
         var a = document.createElement("a");
@@ -100,11 +61,10 @@ var StorageManager = function (file) {
     /**
      * Stores the provided data, calling the callback when done
      * @param {Uint8Array} data - The data to be stored
-     * @param {Boolean} prepend - The data will be prepended
      * @param {Function} callback - The callback to be called when done
      */
-    this.store = function (data, prepend, callback) {
-        writer = prepend ? data.concat(writer) : writer.concat(data);
+    this.store = function (data, callback) {
+        writer = writer.concat(data);
 
         if (typeof callback === 'function') {
             callback();
@@ -119,23 +79,19 @@ var StorageManager = function (file) {
         return fileSize;
     };
 
-    /**
-     * Returns the final data
-     */
-    this.getData = function (removedBytes) {
-        return Utils.toTypedArray(writer, length - removedBytes);
-    };
-
+  
     /**
      * Saves the currently stored data to disk
      */
     this.saveToDisk = function (removedBytes) {
-        var saveAs = msSaveAs || wkSaveAs || defaultSaveAs,
-            blob = new Blob([Utils.toTypedArray(writer, length - removedBytes)], {
+        var blob = new Blob([Utils.toTypedArray(writer, length - removedBytes)], {
                 type: 'application/octet-stream'
             });
 
         fileName = length ? fileName.replace('.smfw', '') : fileName.concat('.smfw');
-        saveAs(blob, fileName);
+        saveBlob(blob, fileName);
     };
 };
+
+//exports
+module.exports = StorageManager;

@@ -5,23 +5,23 @@ module.exports = function (grunt) {
         pkg: grunt.file.readJSON('package.json'),
         jshint: {
             dist: [
-                './securemyfiles.js',
+                'sEncrypt.js',
                 'src/*.js'
             ]
         },
         browserify: {
-            smf: {
+            sEncrypt: {
                 files: {
-                    'dist/securemyfiles.js': [
-                        './securemyfiles.browserify.js'
+                    'dist/sEncrypt.js': [
+                        'sEncrypt.browserify.js'
                     ]
                 }
             }
         },
         uglify: {
             dist: {
-                src: 'dist/securemyfiles.js',
-                dest: 'dist/securemyfiles.min.js'
+                src: 'dist/sEncrypt.js',
+                dest: 'dist/sEncrypt.min.js'
             }
         }
     });
