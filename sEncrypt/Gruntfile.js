@@ -7,7 +7,10 @@ module.exports = function (grunt) {
             dist: [
                 'sEncrypt.js',
                 'src/*.js'
-            ]
+            ],
+            options: {
+                reporterOutput: ''
+            }
         },
         browserify: {
             sEncrypt: {

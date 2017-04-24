@@ -23,8 +23,8 @@ var SecureMyFiles = function (success, error, progress, saveOnDisk) {
         }
     };
 
-    var handleFinish = function () {
-        sMan.saveToDisk();
+    var handleFinish = function (addExt) {
+        sMan.saveToDisk(addExt);
     };
 
     this.encryptFile = function (file, key) {
@@ -35,7 +35,7 @@ var SecureMyFiles = function (success, error, progress, saveOnDisk) {
             saveBlock: sMan.store,
             readBlock: sMan.readChunk,
             progressHandler: handleProgress,
-            finishHandler: handleFinish,
+            finishHandler: handleFinish.bind(this, true),
             errorHandler: error
         });
 

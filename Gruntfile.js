@@ -7,7 +7,10 @@ module.exports = function (grunt) {
             dist: [
                 './securemyfiles.js',
                 'src/*.js'
-            ]
+            ],
+            options: {
+                reporterOutput: ''
+            }
         },
         browserify: {
             smf: {

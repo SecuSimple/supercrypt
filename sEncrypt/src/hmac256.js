@@ -16,9 +16,11 @@ var hmac256 = function (key) {
     return service;
 
     function init() {
-        for (var i = hashKey.length; i < 64; i++)
+        var i;
+
+        for (i = hashKey.length; i < 64; i++)
             hashKey[i] = 0;
-        for (var i = 0; i < 64; i++)
+        for (i = 0; i < 64; i++)
             hashKey[i] ^= 0x36;
 
         hash256.update(hashKey);
@@ -28,7 +30,7 @@ var hmac256 = function (key) {
        HMAC_SHA256_write: process a message fragment. 'msg' may be given as 
        string or as byte array and may have arbitrary length.
     */
-    function update() {
+    function update(msg) {
         hash256.update(msg);
     }
 
@@ -39,19 +41,21 @@ var hmac256 = function (key) {
     */
 
     function finalize() {
-        var md = hash256.finalize(),
+        var i,
+            md = hash256.finalize(),
             hash256New = new sha256();
 
-        for (var i = 0; i < 64; i++)
+        for (i = 0; i < 64; i++)
             hashKey[i] ^= 0x36 ^ 0x5c;
 
         hash256New.update(hashKey);
         hash256New.update(md);
 
-        for (var i = 0; i < 64; i++)
+        for (i = 0; i < 64; i++)
             hashKey[i] = 0;
 
-        delete hashKey;
+        hashKey = undefined;
+
         return hash256New.finalize();
     }
 };

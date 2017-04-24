@@ -1,6 +1,6 @@
 var Encryptors = require('./enc-aescbc');
 var sha256 = require('./sha256');
-var hcompMac256 = require('./hcompMac256');
+var hcompMac256 = require('./hmac256');
 
 var encryptor = function (options) {
     var algorithm,
@@ -119,7 +119,7 @@ var encryptor = function (options) {
 
         //generating the key hash
         var keyHash = getKeyHash(key);
-        compMac = new hcompMac256(keyHash(0, 16));
+        compMac = new hcompMac256(keyHash.slice(0, 16));
 
         //initializing size
         sizeRead = 0;
@@ -150,10 +150,8 @@ var encryptor = function (options) {
         //update total size read from file
         sizeRead += block.byteLength;
 
+        var byteDiff = sizeRead - options.fileSize;
         if (sizeRead > options.fileSize) {
-            //check if the total size read doesn't include all the mac
-            var byteDiff = sizeRead - options.fileSize;
-
             //get the read mac from the block (last bytes bigger than the file content size)
             readMac.set(block.slice(-byteDiff), 0);
             block = block.slice(0, -byteDiff);
@@ -172,7 +170,7 @@ var encryptor = function (options) {
         //check if total size read has exceeded the actual file content
         if (sizeRead <= options.fileSize) {
             //read the next block and continue decryption
-            options.readBlock(chunkSize, continueDecryption)
+            options.readBlock(chunkSize, continueDecryption);
             return;
         }
 
@@ -192,7 +190,7 @@ var encryptor = function (options) {
      * Validates mac and finalizes decryption
      */
     function validateAndFinalize() {
-        if (arraybufferEqual(readMac.buffer, compMac.buffer)) {
+        if (validateChecksum(readMac, compMac.finalize())) {
             options.finishHandler();
         }
         else {
@@ -290,31 +288,24 @@ function extend(a, b) {
 }
 
 /**
- * Checks if two array buffers are equal
- * @param {ArrayBuffer} buf1 - Array buffer 1
- * @param {ArrayBiffer} buf2 - Array buffer 2
+ * Checks if two (typed) array(s) are equal
+ * @param {ArrayBuffer} read - UInt8Array
+ * @param {Array} comp - Array
  */
-function arraybufferEqual(buf1, buf2) {
-    if (buf1 === buf2) {
-        return true;
-    }
-
-    if (buf1.byteLength !== buf2.byteLength) {
+function validateChecksum(read, comp) {
+    if (read.byteLength !== comp.length) {
         return false;
     }
 
-    var view1 = new DataView(buf1);
-    var view2 = new DataView(buf2);
-
-    var i = buf1.byteLength;
+    var i = read.byteLength;
     while (i--) {
-        if (view1.getUint8(i) !== view2.getUint8(i)) {
+        if (read[i] !== comp[i]) {
             return false;
         }
     }
 
     return true;
-};
+}
 
 //exports
 module.exports = encryptor;

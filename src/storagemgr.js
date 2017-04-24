@@ -79,16 +79,17 @@ var StorageManager = function (file) {
         return fileSize;
     };
 
-  
+
     /**
      * Saves the currently stored data to disk
+     * @param {boolean} addExt - True if should add the encryption extension
      */
-    this.saveToDisk = function (removedBytes) {
-        var blob = new Blob([Utils.toTypedArray(writer, length - removedBytes)], {
-                type: 'application/octet-stream'
-            });
+    this.saveToDisk = function (addExt) {
+        var blob = new Blob([Utils.toTypedArray(writer)], {
+            type: 'application/octet-stream'
+        });
 
-        fileName = length ? fileName.replace('.smfw', '') : fileName.concat('.smfw');
+        fileName = addExt ? fileName.concat('.smfw') : fileName.replace('.smfw', '');
         saveBlob(blob, fileName);
     };
 };

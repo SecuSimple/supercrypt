@@ -102,7 +102,7 @@ var sha256 = function () {
             0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
             0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
         ),
-        buff = new Array(),
+        buff = [],
         len = 0,
         service = {
             update: update,
@@ -133,16 +133,17 @@ var sha256 = function () {
 
 
     function finalize() {
+        var i;
         buff[buff.length] = 0x80;
 
         if (buff.length > 64 - 8) {
-            for (var i = buff.length; i < 64; i++)
+            for (i = buff.length; i < 64; i++)
                 buff[i] = 0;
             hashByteBlock(initH, buff);
             buff.length = 0;
         }
 
-        for (var i = buff.length; i < 64 - 5; i++)
+        for (i = buff.length; i < 64 - 5; i++)
             buff[i] = 0;
         buff[59] = (len >>> 29) & 0xff;
         buff[60] = (len >>> 21) & 0xff;
@@ -152,20 +153,19 @@ var sha256 = function () {
         hashByteBlock(initH, buff);
 
         var res = new Array(32);
-        for (var i = 0; i < 8; i++) {
+        for (i = 0; i < 8; i++) {
             res[4 * i + 0] = initH[i] >>> 24;
             res[4 * i + 1] = (initH[i] >> 16) & 0xff;
             res[4 * i + 2] = (initH[i] >> 8) & 0xff;
             res[4 * i + 3] = initH[i] & 0xff;
         }
 
-        delete initH;
-        delete buff;
-        delete len;
+        initH = undefined;
+        buff = undefined;
+        len = undefined;
+        
         return res;
     }
-
-
 
     function shasig0(x) {
         return ((x >>> 7) | (x << 25)) ^ ((x >>> 18) | (x << 14)) ^ (x >>> 3);
@@ -194,11 +194,12 @@ var sha256 = function () {
     }
 
     function hashWordBlock(H, W) {
-        for (var i = 16; i < 64; i++)
+        var i;
+        for (i = 16; i < 64; i++)
             W[i] = (shasig1(W[i - 2]) + W[i - 7] +
                 shasig0(W[i - 15]) + W[i - 16]) & 0xffffffff;
-        var state = new Array().concat(H);
-        for (var i = 0; i < 64; i++) {
+        var state = [].concat(H);
+        for (i = 0; i < 64; i++) {
             var T1 = state[7] + shaSig1(state[4]) +
                 shaCh(state[4], state[5], state[6]) + initK[i] + W[i];
             var T2 = shaSig0(state[0]) + shaMaj(state[0], state[1], state[2]);
@@ -206,7 +207,7 @@ var sha256 = function () {
             state.unshift((T1 + T2) & 0xffffffff);
             state[4] = (state[4] + T1) & 0xffffffff;
         }
-        for (var i = 0; i < 8; i++)
+        for (i = 0; i < 8; i++)
             H[i] = (H[i] + state[i]) & 0xffffffff;
     }
 
@@ -217,7 +218,7 @@ var sha256 = function () {
                 w[4 * i + 2] << 8 | w[4 * i + 3];
         hashWordBlock(H, W);
     }
-}
+};
 
 //exports
 module.exports = sha256;

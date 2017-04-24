@@ -6,14 +6,12 @@
  */
 var EncryptorAESCBC = function (key, iv) {
     var encryptor = {
-        chunkSize: 160000,
         encrypt: encrypt,
-        decrypt: decrypt,
-        getChecksum: getChecksum,
+        decrypt: decrypt
     },
         prevEncBlock = iv,
         prevDecBlock = iv,
-        checksum = 0,
+        // checksum = 0,
         sBox,
         shiftRowTab,
         sBoxInv,
@@ -39,23 +37,27 @@ var EncryptorAESCBC = function (key, iv) {
 
         while (startIndex < byteArray.byteLength) {
             endIndex = startIndex + 16;
-            if (endIndex > byteArray.byteLength) {
+
+            //if last block
+            if (endIndex >= byteArray.byteLength) {
                 endIndex = byteArray.byteLength;
+                paddingValue = 16 - (endIndex - byteArray.byteLength);
             }
+
+            //copy block to be encrypted
             encBlock = [];
             for (eidx = 0, idx = startIndex; idx < endIndex; eidx++ , idx++) {
                 encBlock[eidx] = byteArray[idx];
             }
 
-            //pad the last bytes if needed
-            if (eidx < 16) {
-                paddingValue = 16 - eidx;
-                while (eidx < 16) {
+            //pad the last bytes if needed PKCS7 (including 16 * 16 bytes)
+            if (paddingValue) {
+                for (i = 0; i < paddingValue; i++) {
                     encBlock[eidx++] = paddingValue;
                 }
             }
 
-            checksum = checksum ^ cksum(encBlock);
+            // checksum = checksum ^ cksum(encBlock);
             xor(encBlock, prevEncBlock);
 
             encryptBlock(encBlock, key);
@@ -87,9 +89,9 @@ var EncryptorAESCBC = function (key, iv) {
         while (startIndex < byteArray.byteLength) {
             endIndex = startIndex + 16;
             //TODO REMOVE THIS
-            if (endIndex > byteArray.byteLength) {
-                endIndex = byteArray.byteLength;
-            }
+            // if (endIndex > byteArray.byteLength) {
+            //     endIndex = byteArray.byteLength;
+            // }
 
             decBlock = [];
             for (eidx = 0, idx = startIndex; idx < endIndex; eidx++ , idx++) {
@@ -99,7 +101,7 @@ var EncryptorAESCBC = function (key, iv) {
             blockBefore = decBlock.slice(0);
             decryptBlock(decBlock, key);
             xor(decBlock, prevDecBlock);
-            checksum = checksum ^ cksum(decBlock);
+            // checksum = checksum ^ cksum(decBlock);
 
             prevDecBlock = blockBefore;
 
@@ -112,27 +114,27 @@ var EncryptorAESCBC = function (key, iv) {
         return resultArray;
     }
 
-    /**
-     * Returns the checksum
-     * @returns {String} - the checksum as string
-     */
-    function getChecksum() {
-        return checksum.toString();
-    }
+    // /**
+    //  * Returns the checksum
+    //  * @returns {String} - the checksum as string
+    //  */
+    // function getChecksum() {
+    //     return checksum.toString();
+    // }
 
-    /**
-     * Computes simple checksum of a byte array
-     * @param {Array<Byte>} byteArray - The byte array
-     * @return {Number} The checksum
-     */
-    function cksum(byteArray) {
-        var res = 0,
-            len = byteArray.length;
-        for (var i = 0; i < len; i++) {
-            res = res * 31 + byteArray[i];
-        }
-        return res;
-    }
+    // /**
+    //  * Computes simple checksum of a byte array
+    //  * @param {Array<Byte>} byteArray - The byte array
+    //  * @return {Number} The checksum
+    //  */
+    // function cksum(byteArray) {
+    //     var res = 0,
+    //         len = byteArray.length;
+    //     for (var i = 0; i < len; i++) {
+    //         res = res * 31 + byteArray[i];
+    //     }
+    //     return res;
+    // }
 
     /**
      * Applies XOR on two arrays having a fixed length of 16 bytes.
