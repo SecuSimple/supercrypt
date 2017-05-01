@@ -11,7 +11,6 @@ var EncryptorAESCBC = function (key, iv) {
     },
         prevEncBlock = iv,
         prevDecBlock = iv,
-        // checksum = 0,
         sBox,
         shiftRowTab,
         sBoxInv,
@@ -33,40 +32,28 @@ var EncryptorAESCBC = function (key, iv) {
             eidx,
             encBlock,
             paddingValue,
-            resultArray = [];
+            resultArray = new Uint8Array( byteArray.byteLength);
 
         while (startIndex < byteArray.byteLength) {
             endIndex = startIndex + 16;
 
-            //if last block
-            if (endIndex >= byteArray.byteLength) {
-                endIndex = byteArray.byteLength;
-                paddingValue = 16 - (endIndex - byteArray.byteLength);
-            }
-
-            //copy block to be encrypted
-            encBlock = [];
+            //copy block to be encrypted into a temporary array
+            encBlock = new Uint8Array(16);
             for (eidx = 0, idx = startIndex; idx < endIndex; eidx++ , idx++) {
                 encBlock[eidx] = byteArray[idx];
             }
 
-            //pad the last bytes if needed PKCS7 (including 16 * 16 bytes)
-            if (paddingValue) {
-                for (i = 0; i < paddingValue; i++) {
-                    encBlock[eidx++] = paddingValue;
-                }
-            }
-
-            // checksum = checksum ^ cksum(encBlock);
+            //xor the blocks, CBC mode
             xor(encBlock, prevEncBlock);
 
+            //encrypt block
             encryptBlock(encBlock, key);
 
+            //save previous block for CBC
             prevEncBlock = encBlock.slice(0);
 
-            for (eidx = 0, idx = resultArray.length; eidx < 16; eidx++ , idx++) {
-                resultArray[idx] = encBlock[eidx];
-            }
+            //save the result in the resulting array
+            resultArray.set(encBlock, startIndex);
 
             startIndex += 16;
         }
@@ -84,57 +71,37 @@ var EncryptorAESCBC = function (key, iv) {
             endIndex,
             decBlock,
             blockBefore,
-            resultArray = [];
+            resultArray = new Uint8Array(byteArray.byteLength);
 
         while (startIndex < byteArray.byteLength) {
             endIndex = startIndex + 16;
-            //TODO REMOVE THIS
-            // if (endIndex > byteArray.byteLength) {
-            //     endIndex = byteArray.byteLength;
-            // }
 
-            decBlock = [];
+            //copy the block to be decrypted in a temporary array
+            decBlock = new Uint8Array(16);
             for (eidx = 0, idx = startIndex; idx < endIndex; eidx++ , idx++) {
                 decBlock[eidx] = byteArray[idx];
             }
 
+            //save the block for CBC - needs to be encrypted
             blockBefore = decBlock.slice(0);
-            decryptBlock(decBlock, key);
-            xor(decBlock, prevDecBlock);
-            // checksum = checksum ^ cksum(decBlock);
 
+            //decrypt the block
+            decryptBlock(decBlock, key);
+
+            //xor with previous block, CBC mode
+            xor(decBlock, prevDecBlock);
+
+            //save the previous block for CBC
             prevDecBlock = blockBefore;
 
-            for (eidx = 0, idx = resultArray.length; eidx < 16; eidx++ , idx++) {
-                resultArray[idx] = decBlock[eidx];
-            }
+            //save the result in the resulting array
+            resultArray.set(decBlock, startIndex);
 
             startIndex += 16;
         }
         return resultArray;
     }
 
-    // /**
-    //  * Returns the checksum
-    //  * @returns {String} - the checksum as string
-    //  */
-    // function getChecksum() {
-    //     return checksum.toString();
-    // }
-
-    // /**
-    //  * Computes simple checksum of a byte array
-    //  * @param {Array<Byte>} byteArray - The byte array
-    //  * @return {Number} The checksum
-    //  */
-    // function cksum(byteArray) {
-    //     var res = 0,
-    //         len = byteArray.length;
-    //     for (var i = 0; i < len; i++) {
-    //         res = res * 31 + byteArray[i];
-    //     }
-    //     return res;
-    // }
 
     /**
      * Applies XOR on two arrays having a fixed length of 16 bytes.

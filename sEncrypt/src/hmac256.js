@@ -31,7 +31,12 @@ var hmac256 = function (key) {
        string or as byte array and may have arbitrary length.
     */
     function update(msg) {
-        hash256.update(msg);
+        if (typeof msg.byteLength === typeof undefined) {
+            hash256.update(msg);
+        }
+        else {
+            hash256.updateByte(msg);
+        }
     }
 
 

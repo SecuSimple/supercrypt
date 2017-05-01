@@ -1,16 +1,24 @@
 var Encryptors = require('./enc-aescbc');
 var sha256 = require('./sha256');
 var hcompMac256 = require('./hmac256');
+var chunkSize = 160000;
+
+/**
+  * Gets the chunkSize
+  */
+var getChunkSize = function () {
+    return chunkSize;
+}
 
 var encryptor = function (options) {
     var algorithm,
         readMac = new Uint8Array(32),
         compMac,
-        chunkSize = 160000,
         sizeRead,
         service = {
             encrypt: encrypt,
-            decrypt: decrypt
+            decrypt: decrypt,
+            getChunkSize: getChunkSize
         },
         defaultOps = {
             algorithm: Encryptors.AESCBC
@@ -50,7 +58,7 @@ var encryptor = function (options) {
         }
 
         //adjusting to the size of the actual content (IV 16, MAC 32)
-        options.fileSize -= 48;
+        options.decryptionFileSize = options.fileSize - 48;
     }
 
     /**
@@ -66,6 +74,11 @@ var encryptor = function (options) {
 
         //generating key hash
         var keyHash = getKeyHash(key);
+
+        //initializing size
+        sizeRead = 0;
+
+        //instantiating the HMAC algorithm
         compMac = new hcompMac256(keyHash.slice(0, 16));
 
         //generating and saving the IV
@@ -73,7 +86,7 @@ var encryptor = function (options) {
         compMac.update(iv);
         options.saveBlock(iv);
 
-        //instantiating the hcompMac and the encryption algorithm
+        //instantiating the encryption algorithm
         algorithm = new options.algorithm(keyHash.slice(16), iv);
 
         //starting the encryption
@@ -88,6 +101,23 @@ var encryptor = function (options) {
     function continueEncryption(block) {
         if (options.progressHandler) {
             options.progressHandler(block.byteLength);
+        }
+
+        //update total size read from file
+        sizeRead += block.byteLength;
+
+        //apply padding to last block
+        if (block.byteLength < chunkSize || sizeRead === options.fileSize) {
+            //computing the padding
+            var paddingLength = 16 - (block.byteLength % 16),
+                newBlock = new Uint8Array(block.byteLength + paddingLength);
+
+            //setting the padding
+            newBlock.set(block);
+            for (var i = block.byteLength; i < newBlock.byteLength; i++) {
+                newBlock[i] = paddingLength;
+            }
+            block = newBlock;
         }
 
         //encrypt the block and save
@@ -150,25 +180,27 @@ var encryptor = function (options) {
         //update total size read from file
         sizeRead += block.byteLength;
 
-        var byteDiff = sizeRead - options.fileSize;
-        if (sizeRead > options.fileSize) {
+        var byteDiff = sizeRead - options.decryptionFileSize;
+        if (sizeRead > options.decryptionFileSize) {
             //get the read mac from the block (last bytes bigger than the file content size)
-            readMac.set(block.slice(-byteDiff), 0);
+            readMac.set(block.slice(-byteDiff));
             block = block.slice(0, -byteDiff);
         }
 
-        //decrypt the block and save
+        //update mac
         compMac.update(block);
+
+        //decrypt the block
         block = algorithm.decrypt(block);
 
         //remove the last (padding) bytes
-        if (sizeRead >= options.fileSize) {
-            block.slice(0, -(block[block.byteLength - 1]));
+        if (sizeRead >= options.decryptionFileSize) {
+            block = block.slice(0, -(block[block.byteLength - 1]));
         }
         options.saveBlock(block);
 
         //check if total size read has exceeded the actual file content
-        if (sizeRead <= options.fileSize) {
+        if (sizeRead <= options.decryptionFileSize) {
             //read the next block and continue decryption
             options.readBlock(chunkSize, continueDecryption);
             return;
@@ -200,50 +232,19 @@ var encryptor = function (options) {
 
     function getKeyHash(key) {
         var hash256 = new sha256();
-        hash256.update(key);
+        hash256.update(stringToByteArray(key));
         return hash256.finalize();
     }
 };
 
 /**
- * Transforms a string into a fixed size byte array
- * @param {String} string - the string to be transformed
- * @param {Number} len - the desired destination length
- * @return {Array} The resulting array padded with 0 at the end
+ * Transforms a string into a byte array
+ * @param {String} str - the string to be transformed
+ * @return {Array} The resulting array
  */
-function stringToByteArray(string, len) {
-    if (string.length > len) {
-        throw 'String is too large';
-    }
-
-    var lengthArray = new Array(len);
-    for (var i = string.length - 1, j = len - 1; i >= 0; i-- , j--) {
-        lengthArray[j] = string.charCodeAt(i);
-    }
-
-    while (j >= 0) {
-        lengthArray[j--] = 0;
-    }
-    return lengthArray;
-}
-
-
-/**
- * Transforms a byte array into string
- * @param {TypedArray} byteArray - the typed byte array to be transformed
- * @return {String} The resulting string
- */
-function byteArrayToString(byteArray) {
-    var string = '';
-    for (var i = 0; i < byteArray.byteLength; i++) {
-        if (byteArray[i] === 0) {
-            continue;
-        }
-
-        string += String.fromCharCode(byteArray[i]);
-    }
-    return string;
-}
+function stringToByteArray(str) {
+    return Array.prototype.map.call(str, function (c) { return c.charCodeAt(0); });
+};
 
 /**
  * Generate new random 128-bit key, based on seedList (a seed list)
@@ -306,6 +307,9 @@ function validateChecksum(read, comp) {
 
     return true;
 }
+
+//setting the static function
+encryptor.getChunkSize = getChunkSize;
 
 //exports
 module.exports = encryptor;

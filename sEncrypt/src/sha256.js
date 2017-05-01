@@ -1,91 +1,6 @@
-/*
- *  jssha256 version 0.1  -  Copyright 2006 B. Poettering
- *
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License as
- *  published by the Free Software Foundation; either version 2 of the
- *  License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- *  02111-1307 USA
+/**
+ * SHA 256 function
  */
-
-/*
- * http://point-at-infinity.org/jssha256/
- *
- * This is a JavaScript implementation of the SHA256 secure hash function
- * and the HMAC-SHA256 message authentication code (MAC).
- *
- * The routines' well-functioning has been verified with the test vectors 
- * given in FIPS-180-2, Appendix B and IETF RFC 4231. The HMAC algorithm 
- * conforms to IETF RFC 2104. 
- *
- * The following code example computes the hash value of the string "abc".
- *
- *    SHA256_init();
- *    SHA256_write("abc");
- *    digest = SHA256_finalize();  
- *    digest_hex = array_to_hex_string(digest);
- * 
- * Get the same result by calling the shortcut function SHA256_hash:
- * 
- *    digest_hex = SHA256_hash("abc");
- * 
- * In the following example the calculation of the HMAC of the string "abc" 
- * using the key "secret key" is shown:
- * 
- *    HMAC_SHA256_init("secret key");
- *    HMAC_SHA256_write("abc");
- *    mac = HMAC_SHA256_finalize();
- *    mac_hex = array_to_hex_string(mac);
- *
- * Again, the same can be done more conveniently:
- * 
- *    mac_hex = HMAC_SHA256_MAC("secret key", "abc");
- *
- * Note that the internal state of the hash function is held in global
- * variables. Therefore one hash value calculation has to be completed 
- * before the next is begun. The same applies the the HMAC routines.
- *
- * Report bugs to: jssha256 AT point-at-infinity.org
- *
- */
-
-/******************************************************************************/
-
-/* array_to_hex_string: convert a byte array to a hexadecimal string */
-
-// function array_to_hex_string(ary) {
-//     var res = "";
-//     for (var i = 0; i < ary.length; i++)
-//         res += SHA256_hexchars[ary[i] >> 4] + SHA256_hexchars[ary[i] & 0x0f];
-//     return res;
-// }
-
-
-
-/******************************************************************************/
-
-/* The following lookup tables and functions are for internal use only! */
-
-// SHA256_hexchars = new Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-//     'a', 'b', 'c', 'd', 'e', 'f');
-
-/******************************************************************************/
-
-/* The following are the SHA256 routines */
-
-/* 
-   SHA256_init: initialize the internal state of the hash function. Call this
-   function before calling the SHA256_write function.
-*/
 var sha256 = function () {
     var initH = new Array(0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19),
@@ -106,6 +21,7 @@ var sha256 = function () {
         len = 0,
         service = {
             update: update,
+            updateByte: updateByte,
             finalize: finalize
         };
 
@@ -116,6 +32,18 @@ var sha256 = function () {
        'msg' - byte array and may have arbitrary length.
     
     */
+    function updateByte(msg) {
+        var temp = new Uint8Array((buff.byteLength || buff.length) + msg.byteLength);
+        temp.set(buff);
+        temp.set(msg, buff.byteLength || buff.length);
+
+        for (var i = 0; i + 64 <= temp.byteLength; i += 64) {
+            hashByteBlock(initH, temp.slice(i, i + 64));
+        }
+        buff = temp.slice(i);
+        len += msg.byteLength;
+    }
+
     function update(msg) {
         buff = buff.concat(msg);
         for (var i = 0; i + 64 <= buff.length; i += 64)
@@ -130,10 +58,14 @@ var sha256 = function () {
        after the last call to SHA256_write. An array of 32 bytes (= 256 bits) 
        is returned.
     */
-
-
     function finalize() {
         var i;
+
+        if (typeof buff.byteLength !== typeof undefined) {
+            //transforming buff into regular array
+            buff = getArrayFromTypedArray(buff);
+        }
+
         buff[buff.length] = 0x80;
 
         if (buff.length > 64 - 8) {
@@ -163,8 +95,18 @@ var sha256 = function () {
         initH = undefined;
         buff = undefined;
         len = undefined;
-        
+
         return res;
+    }
+
+    function getArrayFromTypedArray(typedArray) {
+        var newArray = new Array(typedArray.byteLength);
+
+        for (i = 0; i < newArray.length; i++) {
+            newArray[i] = typedArray[i];
+        }
+
+        return newArray;
     }
 
     function shasig0(x) {

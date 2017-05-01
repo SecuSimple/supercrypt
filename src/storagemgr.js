@@ -3,14 +3,15 @@ var Utils = require('./utils');
 /**
  * Manages file operations
  * @param {File} file - The disk file to be handled
+ * @param {number} outputLength - The length of the output file
  */
-var StorageManager = function (file) {
-    var index = 0,
+var StorageManager = function (file, outputLength) {
+    var readerIndex = 0,
+        writerIndex = 0,
         reader = new FileReader(),
         fileSize = file.size,
         fileName = file.name,
-        writer = [],
-        length = fileSize - 32;
+        writer = new Uint8Array(outputLength);
 
     /**
      * Saves a blob to disk
@@ -36,12 +37,12 @@ var StorageManager = function (file) {
      * @param {Function} callback - The callback to be called when done
      */
     this.readChunk = function (size, callback) {
-        if (index >= fileSize) {
+        if (readerIndex >= fileSize) {
             return false;
         }
         var bSize = size;
-        if (index + size > fileSize) {
-            bSize = fileSize - index;
+        if (readerIndex + size > fileSize) {
+            bSize = fileSize - readerIndex;
         }
         reader.onload = function (e) {
             if (reader.readyState === 2) {
@@ -53,8 +54,8 @@ var StorageManager = function (file) {
                 }
             }
         };
-        reader.readAsArrayBuffer(file.slice(index, index + bSize));
-        index += bSize;
+        reader.readAsArrayBuffer(file.slice(readerIndex, readerIndex + bSize));
+        readerIndex += bSize;
         return true;
     };
 
@@ -64,7 +65,8 @@ var StorageManager = function (file) {
      * @param {Function} callback - The callback to be called when done
      */
     this.store = function (data, callback) {
-        writer = writer.concat(data);
+        writer.set(data, writerIndex);
+        writerIndex += typeof data.byteLength === typeof undefined ? data.length : data.byteLength;
 
         if (typeof callback === 'function') {
             callback();
@@ -85,9 +87,19 @@ var StorageManager = function (file) {
      * @param {boolean} addExt - True if should add the encryption extension
      */
     this.saveToDisk = function (addExt) {
-        var blob = new Blob([Utils.toTypedArray(writer)], {
-            type: 'application/octet-stream'
-        });
+        var blob;
+
+        //if decrypted, the plain-text file will be smaller than the encrypted one
+        if (writerIndex < writer.byteLength) {
+            blob = new Blob([writer.slice(0, writerIndex)], {
+                type: 'application/octet-stream'
+            });
+        }
+        else {
+            blob = new Blob([writer], {
+                type: 'application/octet-stream'
+            });
+        }
 
         fileName = addExt ? fileName.concat('.smfw') : fileName.replace('.smfw', '');
         saveBlob(blob, fileName);

@@ -27,9 +27,25 @@ var SecureMyFiles = function (success, error, progress, saveOnDisk) {
         sMan.saveToDisk(addExt);
     };
 
+    var computeOutputLength = function (size, chunkSize) {
+        //add IV and MAC to the file size
+        var finalLength = size + 48;
+
+        //add fixed 16B padding on intermediary blocks
+        finalLength += Math.floor(size / chunkSize) * 16;
+
+        //add padding for the last block
+        finalLength += 16 - (size % 16);
+
+        return finalLength;
+    };
+
     this.encryptFile = function (file, key) {
-        var seedList = [];//TODO use random generator
-        sMan = new StorageManager(file);
+        var seedList = [],//TODO use random generator
+            chunkSize = sEncryptor.getChunkSize(),
+            finalLength = computeOutputLength(file.size, chunkSize);
+
+        sMan = new StorageManager(file, finalLength);
         encryptor = new sEncryptor({
             fileSize: sMan.getLength(),
             saveBlock: sMan.store,
@@ -43,7 +59,7 @@ var SecureMyFiles = function (success, error, progress, saveOnDisk) {
     };
 
     this.decryptFile = function (file, key) {
-        sMan = new StorageManager(file);
+        sMan = new StorageManager(file, file.size - 48);
         encryptor = new sEncryptor({
             fileSize: sMan.getLength(),
             saveBlock: sMan.store,
