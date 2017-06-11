@@ -1,4 +1,4 @@
-var sEncryptor = require('../sEncrypt/sEncrypt');
+var supercrypt = require('../lib/supercrypt');
 var StorageManager = require('./storagemgr');
 var Utils = require('./utils');
 
@@ -42,11 +42,11 @@ var SecureMyFiles = function (success, error, progress, saveOnDisk) {
 
     this.encryptFile = function (file, key) {
         var seedList = [],//TODO use random generator
-            chunkSize = sEncryptor.getChunkSize(),
+            chunkSize = supercrypt.getChunkSize(),
             finalLength = computeOutputLength(file.size, chunkSize);
 
         sMan = new StorageManager(file, finalLength);
-        encryptor = new sEncryptor({
+        encryptor = new supercrypt({
             fileSize: sMan.getLength(),
             saveBlock: sMan.store,
             readBlock: sMan.readChunk,
@@ -60,7 +60,7 @@ var SecureMyFiles = function (success, error, progress, saveOnDisk) {
 
     this.decryptFile = function (file, key) {
         sMan = new StorageManager(file, file.size - 48);
-        encryptor = new sEncryptor({
+        encryptor = new supercrypt({
             fileSize: sMan.getLength(),
             saveBlock: sMan.store,
             readBlock: sMan.readChunk,

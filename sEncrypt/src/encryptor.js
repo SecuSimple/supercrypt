@@ -10,7 +10,7 @@ var macSize = algSize * 2;
   */
 var getChunkSize = function () {
     return chunkSize;
-}
+};
 
 
 /**
@@ -19,7 +19,7 @@ var getChunkSize = function () {
  * @param {object} options - The options for the encryptor
  * @returns {object} The encryptor object
  */
-var encryptor = function (options) {
+var supercrypt = function (options) {
     var algorithm,
         readMac = new Uint8Array(macSize),
         compMac,
@@ -258,7 +258,7 @@ var encryptor = function (options) {
  */
 function stringToByteArray(str) {
     return Array.prototype.map.call(str, function (c) { return c.charCodeAt(0); });
-};
+}
 
 /**
  * Generate new random 128-bit key, based on seedList (a seed list)
@@ -323,7 +323,7 @@ function validateChecksum(read, comp) {
 }
 
 //setting the static function
-encryptor.getChunkSize = getChunkSize;
+supercrypt.getChunkSize = getChunkSize;
 
 //exports
-module.exports = encryptor;
+module.exports = supercrypt;
