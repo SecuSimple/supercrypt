@@ -75,7 +75,7 @@ var StorageManager = function (file, outputLength) {
 
     /**
      * Gets the file length
-     * @return {Number} The file length
+     * @returns {Number} The file length
      */
     this.getLength = function () {
         return fileSize;

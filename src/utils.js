@@ -18,7 +18,7 @@ Utils.toTypedArray = function (array, length) {
  * Transforms a string into a fixed size byte array
  * @param {String} string - the string to be transformed
  * @param {Number} len - the desired destination length
- * @return {Array} The resulting array padded with 0 at the end
+ * @returns {Array} The resulting array padded with 0 at the end
  */
 Utils.stringToByteArray = function (string, len) {
   if (string.length > len) {
@@ -39,7 +39,7 @@ Utils.stringToByteArray = function (string, len) {
 /**
  * Transforms a byte array into string
  * @param {TypedArray} byteArray - the typed byte array to be transformed
- * @return {String} The resulting string
+ * @returns {String} The resulting string
  */
 Utils.byteArrayToString = function (byteArray) {
   var string = '';

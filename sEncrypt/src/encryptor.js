@@ -2,6 +2,8 @@ var Encryptors = require('./enc-aescbc');
 var sha256 = require('./sha256');
 var hcompMac256 = require('./hmac256');
 var chunkSize = 160000;
+var algSize = 16;
+var macSize = algSize * 2;
 
 /**
   * Gets the chunkSize
@@ -10,9 +12,16 @@ var getChunkSize = function () {
     return chunkSize;
 }
 
+
+/**
+ * Encryptor class
+ * 
+ * @param {object} options - The options for the encryptor
+ * @returns {object} The encryptor object
+ */
 var encryptor = function (options) {
     var algorithm,
-        readMac = new Uint8Array(32),
+        readMac = new Uint8Array(macSize),
         compMac,
         sizeRead,
         service = {
@@ -58,7 +67,7 @@ var encryptor = function (options) {
         }
 
         //adjusting to the size of the actual content (IV 16, MAC 32)
-        options.decryptionFileSize = options.fileSize - 48;
+        options.decryptionFileSize = options.fileSize - algSize - macSize;
     }
 
     /**
@@ -79,7 +88,7 @@ var encryptor = function (options) {
         sizeRead = 0;
 
         //instantiating the HMAC algorithm
-        compMac = new hcompMac256(keyHash.slice(0, 16));
+        compMac = new hcompMac256(keyHash.slice(0, algSize));
 
         //generating and saving the IV
         var iv = generateIV(seedList);
@@ -87,7 +96,7 @@ var encryptor = function (options) {
         options.saveBlock(iv);
 
         //instantiating the encryption algorithm
-        algorithm = new options.algorithm(keyHash.slice(16), iv);
+        algorithm = new options.algorithm(keyHash.slice(algSize), iv);
 
         //starting the encryption
         options.readBlock(chunkSize, continueEncryption);
@@ -109,7 +118,7 @@ var encryptor = function (options) {
         //apply padding to last block
         if (block.byteLength < chunkSize || sizeRead === options.fileSize) {
             //computing the padding
-            var paddingLength = 16 - (block.byteLength % 16),
+            var paddingLength = algSize - (block.byteLength % algSize),
                 newBlock = new Uint8Array(block.byteLength + paddingLength);
 
             //setting the padding
@@ -149,17 +158,17 @@ var encryptor = function (options) {
 
         //generating the key hash
         var keyHash = getKeyHash(key);
-        compMac = new hcompMac256(keyHash.slice(0, 16));
+        compMac = new hcompMac256(keyHash.slice(0, algSize));
 
         //initializing size
         sizeRead = 0;
 
-        options.readBlock(16, function (iv) {
+        options.readBlock(algSize, function (iv) {
             //update mac with iv
             compMac.update(iv);
 
             //instantiating the algorithm
-            algorithm = new options.algorithm(keyHash.slice(16), iv);
+            algorithm = new options.algorithm(keyHash.slice(algSize), iv);
 
             //starting the decryption
             options.readBlock(chunkSize, continueDecryption);
@@ -230,6 +239,11 @@ var encryptor = function (options) {
         }
     }
 
+    /**
+     * Computes the hash of a given string key
+     * @param {string} key - The key
+     * @returns {object} They key hash
+     */
     function getKeyHash(key) {
         var hash256 = new sha256();
         hash256.update(stringToByteArray(key));
@@ -240,7 +254,7 @@ var encryptor = function (options) {
 /**
  * Transforms a string into a byte array
  * @param {String} str - the string to be transformed
- * @return {Array} The resulting array
+ * @returns {Array} The resulting array
  */
 function stringToByteArray(str) {
     return Array.prototype.map.call(str, function (c) { return c.charCodeAt(0); });
@@ -251,7 +265,7 @@ function stringToByteArray(str) {
  * If the seedlist is too short, the function will use random numbers
  * The function also uses miliseconds from current date to generate the IV
  * @param {Array<Number>} seedList - an array of seeds collected from true random sources (i.e. mouse movement)
- * @return {Array<Number>} The randomly generated Initialization Vector
+ * @returns {Array<Number>} The randomly generated Initialization Vector
  */
 function generateIV(seedList) {
     var ent, dat, num, result = [];
@@ -260,7 +274,7 @@ function generateIV(seedList) {
         seedList = [];
     }
 
-    for (var i = 0; i < 16; i++) {
+    for (var i = 0; i < algSize; i++) {
         ent = seedList.length > 1 ? seedList.splice(i, 1) : [Math.random() * 10, Math.random() * 10];
         dat = new Date();
         num = ent.length ? ent[0] * Math.random() / 10 : (Math.random() * 10 + Math.random() * 100 + Math.random() * 1000) / 100;

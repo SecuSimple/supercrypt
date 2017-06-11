@@ -112,7 +112,7 @@ var EncryptorAESCBC = function (key, iv) {
      * Applies XOR on two arrays having a fixed length of 16 bytes.
      * @param {Array<Byte>} arr1 - The first array
      * @param {Array<Byte>} arr2 - The second array
-     * @return {Array<Byte>} The result array
+     * @returns {Array<Byte>} The result array
      */
     function xor(arr1, arr2) {
         for (var i = 0; i < 16; i++) {
@@ -535,7 +535,7 @@ var encryptor = function (options) {
 /**
  * Transforms a string into a byte array
  * @param {String} str - the string to be transformed
- * @return {Array} The resulting array
+ * @returns {Array} The resulting array
  */
 function stringToByteArray(str) {
     return Array.prototype.map.call(str, function (c) { return c.charCodeAt(0); });
@@ -546,7 +546,7 @@ function stringToByteArray(str) {
  * If the seedlist is too short, the function will use random numbers
  * The function also uses miliseconds from current date to generate the IV
  * @param {Array<Number>} seedList - an array of seeds collected from true random sources (i.e. mouse movement)
- * @return {Array<Number>} The randomly generated Initialization Vector
+ * @returns {Array<Number>} The randomly generated Initialization Vector
  */
 function generateIV(seedList) {
     var ent, dat, num, result = [];
@@ -1005,7 +1005,7 @@ var StorageManager = function (file, outputLength) {
 
     /**
      * Gets the file length
-     * @return {Number} The file length
+     * @returns {Number} The file length
      */
     this.getLength = function () {
         return fileSize;
@@ -1059,7 +1059,7 @@ Utils.toTypedArray = function (array, length) {
  * Transforms a string into a fixed size byte array
  * @param {String} string - the string to be transformed
  * @param {Number} len - the desired destination length
- * @return {Array} The resulting array padded with 0 at the end
+ * @returns {Array} The resulting array padded with 0 at the end
  */
 Utils.stringToByteArray = function (string, len) {
   if (string.length > len) {
@@ -1080,7 +1080,7 @@ Utils.stringToByteArray = function (string, len) {
 /**
  * Transforms a byte array into string
  * @param {TypedArray} byteArray - the typed byte array to be transformed
- * @return {String} The resulting string
+ * @returns {String} The resulting string
  */
 Utils.byteArrayToString = function (byteArray) {
   var string = '';

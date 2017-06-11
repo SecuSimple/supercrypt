@@ -130,7 +130,7 @@ var EncryptorAESCBC = function (key, iv) {
     // /**
     //  * Computes simple checksum of a byte array
     //  * @param {Array<Byte>} byteArray - The byte array
-    //  * @return {Number} The checksum
+    //  * @returns {Number} The checksum
     //  */
     // function cksum(byteArray) {
     //     var res = 0,
@@ -145,7 +145,7 @@ var EncryptorAESCBC = function (key, iv) {
      * Applies XOR on two arrays having a fixed length of 16 bytes.
      * @param {Array<Byte>} arr1 - The first array
      * @param {Array<Byte>} arr2 - The second array
-     * @return {Array<Byte>} The result array
+     * @returns {Array<Byte>} The result array
      */
     function xor(arr1, arr2) {
         for (var i = 0; i < 16; i++) {
@@ -537,7 +537,7 @@ var encryptor = function (options) {
  * Transforms a string into a fixed size byte array
  * @param {String} string - the string to be transformed
  * @param {Number} len - the desired destination length
- * @return {Array} The resulting array padded with 0 at the end
+ * @returns {Array} The resulting array padded with 0 at the end
  */
 function stringToByteArray(string, len) {
     if (string.length > len) {
@@ -559,7 +559,7 @@ function stringToByteArray(string, len) {
 /**
  * Transforms a byte array into string
  * @param {TypedArray} byteArray - the typed byte array to be transformed
- * @return {String} The resulting string
+ * @returns {String} The resulting string
  */
 function byteArrayToString(byteArray) {
     var string = '';
@@ -578,7 +578,7 @@ function byteArrayToString(byteArray) {
  * If the seedlist is too short, the function will use random numbers
  * The function also uses miliseconds from current date to generate the IV
  * @param {Array<Number>} seedList - an array of seeds collected from true random sources (i.e. mouse movement)
- * @return {Array<Number>} The randomly generated Initialization Vector
+ * @returns {Array<Number>} The randomly generated Initialization Vector
  */
 function generateIV(seedList) {
     var ent, dat, num, result = [];

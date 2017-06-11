@@ -19,6 +19,7 @@ var sha256 = function () {
         ),
         buff = [],
         len = 0,
+        hashSize = 64,
         service = {
             update: update,
             updateByte: updateByte,
@@ -27,37 +28,38 @@ var sha256 = function () {
 
     return service;
 
-    /*
-       SHA256_write: add a message fragment to the hash function's internal state. 
-       'msg' - byte array and may have arbitrary length.
-    
-    */
+    /**
+     * Updates the hash with a new message
+     * @param {any} msg - The message as byte array
+     */
     function updateByte(msg) {
         var temp = new Uint8Array((buff.byteLength || buff.length) + msg.byteLength);
         temp.set(buff);
         temp.set(msg, buff.byteLength || buff.length);
 
-        for (var i = 0; i + 64 <= temp.byteLength; i += 64) {
-            hashByteBlock(initH, temp.slice(i, i + 64));
+        for (var i = 0; i + hashSize <= temp.byteLength; i += hashSize) {
+            hashByteBlock(initH, temp.slice(i, i + hashSize));
         }
         buff = temp.slice(i);
         len += msg.byteLength;
     }
 
+    /**
+     * Updates the hash with a new message
+     * @param {any} msg - The message as string
+     */
     function update(msg) {
         buff = buff.concat(msg);
-        for (var i = 0; i + 64 <= buff.length; i += 64)
-            hashByteBlock(initH, buff.slice(i, i + 64));
+        for (var i = 0; i + hashSize <= buff.length; i += hashSize)
+            hashByteBlock(initH, buff.slice(i, i + hashSize));
         buff = buff.slice(i);
         len += msg.length;
     }
 
-
-    /*
-       SHA256_finalize: finalize the hash value calculation. Call this function
-       after the last call to SHA256_write. An array of 32 bytes (= 256 bits) 
-       is returned.
-    */
+    /**
+     * Finalizes the hash calculation
+     * @returns {Array<byte>} The resulting hash
+     */
     function finalize() {
         var i;
 
@@ -68,14 +70,14 @@ var sha256 = function () {
 
         buff[buff.length] = 0x80;
 
-        if (buff.length > 64 - 8) {
-            for (i = buff.length; i < 64; i++)
+        if (buff.length > hashSize - 8) {
+            for (i = buff.length; i < hashSize; i++)
                 buff[i] = 0;
             hashByteBlock(initH, buff);
             buff.length = 0;
         }
 
-        for (i = buff.length; i < 64 - 5; i++)
+        for (i = buff.length; i < hashSize - 5; i++)
             buff[i] = 0;
         buff[59] = (len >>> 29) & 0xff;
         buff[60] = (len >>> 21) & 0xff;
@@ -99,6 +101,11 @@ var sha256 = function () {
         return res;
     }
 
+    /**
+     * Converts a typed array to a regular array
+     * @param {TypedArray} typedArray - The typed array 
+     * @returns {Array} The converted array
+     */
     function getArrayFromTypedArray(typedArray) {
         var newArray = new Array(typedArray.byteLength);
 
@@ -109,39 +116,80 @@ var sha256 = function () {
         return newArray;
     }
 
+
+    /**
+     * SHA signature function
+     * @param {number} x - The byte
+     * @returns The result of the operation
+     */
     function shasig0(x) {
         return ((x >>> 7) | (x << 25)) ^ ((x >>> 18) | (x << 14)) ^ (x >>> 3);
     }
 
+    /**
+     * SHA signature function
+     * @param {number} x - The byte
+     * @returns The result of the operation
+     */
     function shasig1(x) {
         return ((x >>> 17) | (x << 15)) ^ ((x >>> 19) | (x << 13)) ^ (x >>> 10);
     }
 
+    /**
+     * SHA signature function
+     * @param {number} x - The byte
+     * @returns The result of the operation
+     */
     function shaSig0(x) {
         return ((x >>> 2) | (x << 30)) ^ ((x >>> 13) | (x << 19)) ^
             ((x >>> 22) | (x << 10));
     }
 
+    /**
+     * SHA signature function
+     * @param {number} x - The byte
+     * @returns The result of the operation
+     */
     function shaSig1(x) {
         return ((x >>> 6) | (x << 26)) ^ ((x >>> 11) | (x << 21)) ^
             ((x >>> 25) | (x << 7));
     }
 
+    /**
+     * SHA checksum function
+     * @param {number} x - The byte
+     * @param {number} y - The byte
+     * @param {number} z - The byte
+     * @returns The result of the operation
+     */
     function shaCh(x, y, z) {
         return z ^ (x & (y ^ z));
     }
 
+    /**
+     * SHA byte operation function
+     * @param {number} x - The byte
+     * @param {number} y - The byte
+     * @param {number} z - The byte
+     * @returns The result of the operation
+     */
     function shaMaj(x, y, z) {
         return (x & y) ^ (z & (x ^ y));
     }
 
+    /**
+     * SHA word block hashing function
+     * @param {Array<byte>} H - The byte array
+     * @param {Array<byte>} W - The byte array
+     * @returns The result of the operation
+     */
     function hashWordBlock(H, W) {
         var i;
-        for (i = 16; i < 64; i++)
+        for (i = 16; i < hashSize; i++)
             W[i] = (shasig1(W[i - 2]) + W[i - 7] +
                 shasig0(W[i - 15]) + W[i - 16]) & 0xffffffff;
         var state = [].concat(H);
-        for (i = 0; i < 64; i++) {
+        for (i = 0; i < hashSize; i++) {
             var T1 = state[7] + shaSig1(state[4]) +
                 shaCh(state[4], state[5], state[6]) + initK[i] + W[i];
             var T2 = shaSig0(state[0]) + shaMaj(state[0], state[1], state[2]);
@@ -153,6 +201,12 @@ var sha256 = function () {
             H[i] = (H[i] + state[i]) & 0xffffffff;
     }
 
+    /**
+     * SHA byte block hashing function
+     * @param {Array<byte>} H - The byte array
+     * @param {Array<byte>} w - The byte array
+     * @returns The result of the operation
+     */
     function hashByteBlock(H, w) {
         var W = new Array(16);
         for (var i = 0; i < 16; i++)
