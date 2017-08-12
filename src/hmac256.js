@@ -16,6 +16,9 @@ var hmac256 = function (key) {
     init();
     return service;
 
+    /**
+     * Initializes the hash
+     */
     function init() {
         var i;
 
@@ -41,8 +44,6 @@ var hmac256 = function (key) {
             hash256.updateByte(msg);
         }
     }
-
-
     
     /**
      * Finalizes the HMAC calculation

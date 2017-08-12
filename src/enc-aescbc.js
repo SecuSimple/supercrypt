@@ -35,6 +35,7 @@ var EncryptorAESCBC = function (key, iv) {
             paddingValue,
             resultArray = new Uint8Array(byteArray.byteLength);
 
+        //while block end was not reached
         while (startIndex < byteArray.byteLength) {
             endIndex = startIndex + algSize;
 
@@ -74,6 +75,7 @@ var EncryptorAESCBC = function (key, iv) {
             blockBefore,
             resultArray = new Uint8Array(byteArray.byteLength);
 
+        //while block end was not reached
         while (startIndex < byteArray.byteLength) {
             endIndex = startIndex + algSize;
 
@@ -118,6 +120,8 @@ var EncryptorAESCBC = function (key, iv) {
 
     /**
      * Combines the state with a round of the key
+     * @param {Array} state - The state 
+     * @param {Array} rkey - The key round
      */
     function addRoundKey(state, rkey) {
         for (var i = 0; i < algSize; i++)
@@ -126,6 +130,8 @@ var EncryptorAESCBC = function (key, iv) {
 
     /**
      * Replaces bytes in the state with bytes from the lookup table
+     * @param {Array} state - The state 
+     * @param {Array} sbox - Lookup table
      */
     function subBytes(state, sbox) {
         for (var i = 0; i < algSize; i++)
@@ -134,6 +140,8 @@ var EncryptorAESCBC = function (key, iv) {
 
     /**
      * Shifts the rows of the state
+     * @param {Array} state - The state 
+     * @param {Array} shifttab - Shift table
      */
     function shiftRows(state, shifttab) {
         var h = state.slice(0);
@@ -143,6 +151,7 @@ var EncryptorAESCBC = function (key, iv) {
 
     /**
      * Mixes state columns (using a fixed polinomial function)
+     * @param {Array} state - The state
      */
     function mixColumns(state) {
         for (var i = 0; i < algSize; i += 4) {
@@ -160,6 +169,7 @@ var EncryptorAESCBC = function (key, iv) {
 
     /**
      * Inverted mix columns
+     * @param {Array} state - The state 
      */
     function mixColumnsInv(state) {
         for (var i = 0; i < algSize; i += 4) {
@@ -215,6 +225,7 @@ var EncryptorAESCBC = function (key, iv) {
 
     /**
      * Expands the cipher key according to its length
+     * @param {Array} key - The key 
      */
     function expandKey(key) {
         var kl = key.length,
@@ -230,7 +241,7 @@ var EncryptorAESCBC = function (key, iv) {
                 ks = algSize * (14 + 1);
                 break;
             default:
-                throw "Key error: Only key lengths of 16, 24 or 32 bytes allowed!";
+                throw new Error("Key error: Only key lengths of 16, 24 or 32 bytes allowed!");
         }
         for (var i = kl; i < ks; i += 4) {
             var temp = key.slice(i - 4, i);
@@ -247,8 +258,10 @@ var EncryptorAESCBC = function (key, iv) {
         }
     }
 
-    /** 
-     * Encrypt a 16-byte array block using the given key
+    /**
+     * Encrypts a 16-byte array block using the given key
+     * @param {Array} block - The block 
+     * @param {Array} key - The key
      */
     function encryptBlock(block, key) {
         var l = key.length;
@@ -264,8 +277,10 @@ var EncryptorAESCBC = function (key, iv) {
         addRoundKey(block, key.slice(i, l));
     }
 
-    /** 
+    /**
      * Decrypts a 16-byte array block using the given key
+     * @param {Array} block - The block 
+     * @param {Array} key - The key
      */
     function decryptBlock(block, key) {
         var l = key.length;
