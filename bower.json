@@ -1,0 +1,23 @@
+{
+  "name": "supercrypt",
+  "description": "Symmetric encryption library in JavaScript with no dependencies",
+  "main": "index.js",
+  "authors": [
+    "VicentiuBacioiu <vicentiu@secusimple.com>"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "encryption",
+    "JavaScript",
+    "AES",
+    "binary"
+  ],
+  "homepage": "https://github.com/SecuSimple/supercrypt",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
