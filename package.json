@@ -2,7 +2,7 @@
   "name": "supercrypt",
   "description": "Symmetric encryption library in JavaScript with no dependencies",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/SecuSimple/supercrypt.git"
